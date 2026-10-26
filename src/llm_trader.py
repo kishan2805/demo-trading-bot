@@ -33,6 +33,10 @@ class LLMTrader:
         self.max_attempts = max(
             1, min(3, int(os.getenv("LLM_MAX_ATTEMPTS", "2")))
         )
+        self.nvidia_rpm = max(
+            1, int(os.getenv("NVIDIA_RPM_LIMIT", "4"))
+        )
+        self._nvidia_last_request = 0.0
         self.provider = os.getenv("LLM_PROVIDER", "nvidia").lower()
 
         self.client = (
@@ -110,26 +114,73 @@ class LLMTrader:
                 )
                 time.sleep(delay)
 
+    
     def _nvidia(self, payload):
         if not self.client:
             raise RuntimeError("NVIDIA_API_KEY not configured")
 
         def call():
+            # Pace every request, including retries.
+            interval = 60.0 / self.nvidia_rpm
+            elapsed = time.monotonic() - self._nvidia_last_request
+            if elapsed < interval:
+                delay = interval - elapsed
+                print(f"NVIDIA rate limiter: waiting {delay:.1f}s")
+                time.sleep(delay)
+
+            self._nvidia_last_request = time.monotonic()
+
             response = self.client.chat.completions.create(
                 model=self.nvidia_model,
                 messages=[
                     {"role": "system", "content": PROMPT},
-                    {"role": "user", "content": json.dumps(payload)},
+                    {
+                        "role": "user",
+                        "content": (
+                            json.dumps(payload)
+                            + "\nReturn only a valid JSON object. "
+                            "Do not include markdown or commentary."
+                        ),
+                    },
                 ],
                 temperature=0.1,
                 max_tokens=700,
+                reasoning_effort="none",
+                response_format={"type": "json_object"},
             )
-            content = response.choices[0].message.content
-            return self._parse(content), self.nvidia_model
+
+            if not response.choices:
+                raise ValueError("NVIDIA returned no completion choices")
+
+            choice = response.choices[0]
+            content = choice.message.content
+
+            if not content or not content.strip():
+                raise ValueError(
+                    f"NVIDIA returned empty content; "
+                    f"finish_reason={choice.finish_reason}"
+                )
+
+            try:
+                result = self._parse(content)
+            except (json.JSONDecodeError, ValueError) as exc:
+                # Do not log the raw response or credentials.
+                raise ValueError(
+                    f"NVIDIA response was not valid trading JSON; "
+                    f"finish_reason={choice.finish_reason}"
+                ) from exc
+
+            return result, self.nvidia_model
 
         return self._retry(
-            "nvidia", call, self._transient_nvidia
+            "nvidia",
+            call,
+            lambda exc: (
+                self._transient_nvidia(exc)
+                or isinstance(exc, json.JSONDecodeError)
+            ),
         )
+
 
     def _gemini(self, payload):
         if not self.gemini_key:
