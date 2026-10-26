@@ -1,0 +1,12 @@
+initial_capital_usd: 10000.0
+risk_per_trade_pct: 0.005
+stop_buffer_pct: 0.002
+reward_risk_ratio: 2.0
+fee_rate: 0.001
+slippage_pct: 0.0005
+allow_short: false
+symbols:
+  BTC: {coingecko_id: bitcoin}
+  ETH: {coingecko_id: ethereum}
+  SOL: {coingecko_id: solana}
+  SUI: {coingecko_id: sui}
