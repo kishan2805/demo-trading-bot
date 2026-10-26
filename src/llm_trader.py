@@ -102,10 +102,11 @@ class LLMTrader:
                     raise
 
                 delay = min(8, 2 ** (attempt - 1))
+                status = getattr(exc, "status_code", None)
                 print(
                     f"{provider} transient failure "
-                    f"({type(exc).__name__}); retry "
-                    f"{attempt + 1}/{self.max_attempts} in {delay}s"
+                    f"({type(exc).__name__}, HTTP {status}): {exc}; "
+                    f"retry {attempt + 1}/{self.max_attempts} in {delay}s"
                 )
                 time.sleep(delay)
 
