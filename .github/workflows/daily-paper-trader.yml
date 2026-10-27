@@ -1,21 +1,16 @@
 
-# name: Daily Paper Trader
-
-# on:
-#   workflow_dispatch:
-#   schedule:
-#     - cron: "25 0 * * *" # 05:55 IST daily; GitHub may delay runs
-# on:
-#   workflow_dispatch:
-#   schedule:
-#     - cron: "*/10 * * * *"
-
 name: Daily Paper Trader
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "13,43 * * * *"
+    - cron: "25 0 * * *" # 05:55 IST daily; GitHub may delay runs
+# on:
+#   workflow_dispatch:
+#   schedule:
+#     - cron: "*/10 * * * *"
+
+
 permissions:
   contents: read
 
