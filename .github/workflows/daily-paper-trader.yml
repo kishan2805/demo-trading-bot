@@ -4,7 +4,7 @@ name: Daily Paper Trader
 on:
   workflow_dispatch:
   schedule:
-    - cron: "25 0 * * *" # 05:55 IST daily; GitHub may delay runs
+    - cron: "30 0 * * *" # 06:00 IST daily
 # on:
 #   workflow_dispatch:
 #   schedule:
