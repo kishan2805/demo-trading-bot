@@ -4,7 +4,7 @@ name: Daily Paper Trader
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 0,6,12,18 * * *" # 06:00, 12:00, 18:00, 00:00 IST
+    - cron: "30 0 * * *" # 06:00, 12:00, 18:00, 00:00 IST
 # on:
 #   workflow_dispatch:
 #   schedule:
